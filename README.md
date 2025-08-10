@@ -1,6 +1,6 @@
 # Advanced RAG Chatbot with Document Analysis
 
-### **Live Demo: [View the Deployed Application Here]([YOUR_RENDER_FRONTEND_URL_HERE])**
+### **Live Demo: [View the Deployed Application Here]([https://document-chatbot-kambaa.vercel.app/])**
 
 An intelligent, full-stack chatbot application that leverages Retrieval-Augmented Generation (RAG) to answer questions based on user-uploaded documents. Built with a Python/FastAPI backend and a polished vanilla JavaScript frontend, this project is optimized for performance, user experience, and is fully deployed online.
 
