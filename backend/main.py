@@ -1,5 +1,3 @@
-# File: backend/main.py
-
 import os
 import io
 import re
@@ -17,7 +15,7 @@ import pandas as pd
 
 # --- LangChain Imports ---
 from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_cohere import CohereEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
@@ -31,33 +29,59 @@ load_dotenv()
 app = FastAPI(
     title="AI Chatbot Backend",
     description="Backend for a RAG chatbot with session management.",
-    version="1.7.0"
+    version="1.8.2" # Version bump for CORS fix
 )
+
+# --- CORRECTED CORS CONFIGURATION ---
+# List of allowed origins. Use a wildcard for local development for convenience.
+# For production, you should lock this down to your Vercel domain.
+allowed_origins = [
+    "https://document-chatbot-kambaa.vercel.app", # Your production frontend
+    "http://127.0.0.1:5500",                   # Your local "Live Server"
+    "http://localhost:5500",                    # Also good to have for local dev
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://document-chatbot-kambaa.vercel.app"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"], # Allows all methods
+    allow_headers=["*"], # Allows all headers
 )
 
-# --- Pre-load Models on Startup for Efficiency ---
-print("Loading HuggingFace embeddings model...")
-try:
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/paraphrase-MiniLM-L3-v2",
-        model_kwargs={'device': 'cpu'}
-    )
-    print("Embeddings model loaded successfully.")
-except Exception as e:
-    print(f"Error loading embeddings model: {e}")
-    embeddings = None
 
-
-# --- Session Management ---
-# In-memory dictionary for session state. Replace with Redis for production.
+# --- Global Variables & Constants ---
+COHERE_EMBED_MODEL = "embed-english-light-v3.0"
+embeddings = None
 sessions: Dict[str, Dict] = {}
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initializes the Cohere embeddings model on application startup.
+    If initialization fails, the application will raise an error and shut down.
+    """
+    print("--- Application Startup ---")
+    global embeddings
+    
+    print(f"Initializing Cohere embeddings model ('{COHERE_EMBED_MODEL}')...")
+    try:
+        cohere_api_key = os.getenv("COHERE_API_KEY")
+        if not cohere_api_key:
+            raise ValueError("FATAL: COHERE_API_KEY environment variable not set.")
+        
+        embeddings = CohereEmbeddings(cohere_api_key=cohere_api_key, model=COHERE_EMBED_MODEL)
+        
+        # Perform a small test embedding to ensure the key and model are valid
+        _ = embeddings.embed_query("Test query")
+
+        print(f"✅ Cohere embeddings model ('{COHERE_EMBED_MODEL}') initialized successfully.")
+    except Exception as e:
+        print(f"❌ FATAL ERROR: Could not initialize Cohere embeddings model: {e}")
+        raise RuntimeError("Application startup failed: Embeddings could not be loaded.") from e
+        
+    print("--- Application Ready ---")
 
 
 # --- Pydantic Models ---
@@ -124,7 +148,7 @@ async def upload_knowledge_base(session_id: str = Form(...), file: UploadFile = 
     if not session_id:
         raise HTTPException(status_code=400, detail="Session ID is missing.")
     if not embeddings:
-        raise HTTPException(status_code=503, detail="Embeddings model is not available.")
+        raise HTTPException(status_code=503, detail="Embeddings model is not available. Check server logs for startup errors.")
 
     if session_id not in sessions:
         sessions[session_id] = {"vector_store": None, "rag_chain": None, "uploaded_files": []}
@@ -186,8 +210,6 @@ async def chat_with_bot(request: ChatRequest):
         raise HTTPException(status_code=400, detail="Session ID is missing.")
 
     # --- Intercept meta-questions BEFORE sending to the LLM ---
-    
-    # 1. Check for questions about uploaded documents
     doc_question_pattern = r"(what|which|list)\s+(file|doc|document|documet)s?\s+(have|did)\s+I\s+(upload|sent|send)|(list|show)\s+(me\s+)?my\s+(file|doc|document|documet)s?"
     if re.search(doc_question_pattern, request.question, re.IGNORECASE):
         if request.session_id in sessions and sessions[request.session_id].get("uploaded_files"):
@@ -196,7 +218,6 @@ async def chat_with_bot(request: ChatRequest):
         else:
             return ChatResponse(answer="You have not uploaded any documents in this session yet.")
 
-    # 2. Check for questions about the conversation history
     history_question_pattern = r"(what was|what's|what is)\s+(my|the)\s+(last|previous)\s+question|my\s+previous\s+question"
     if re.search(history_question_pattern, request.question, re.IGNORECASE):
         if request.chat_history:
