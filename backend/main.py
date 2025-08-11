@@ -229,3 +229,9 @@ async def chat_with_bot(request: ChatRequest):
     except Exception as e:
         print(f"Error during chat for session {request.session_id}: {e}")
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=port, reload=True)
