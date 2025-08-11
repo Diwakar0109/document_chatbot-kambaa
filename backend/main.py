@@ -46,7 +46,7 @@ app.add_middleware(
 print("Loading HuggingFace embeddings model...")
 try:
     embeddings = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2",
+        model_name="sentence-transformers/paraphrase-MiniLM-L3-v2",
         model_kwargs={'device': 'cpu'}
     )
     print("Embeddings model loaded successfully.")
