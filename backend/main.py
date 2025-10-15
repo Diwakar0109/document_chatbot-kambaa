@@ -239,7 +239,7 @@ async def chat_with_bot(request: ChatRequest):
             if re.search(r"^\s*(hi|hello|hey)\s*$", request.question, re.IGNORECASE):
                 return ChatResponse(answer="Hello! I'm ready to chat. For questions about specific documents, please upload a file first.")
             
-            llm = ChatGroq(temperature=0.7, model_name="llama3-8b-8192", groq_api_key=os.getenv("GROQ_API_KEY"))
+            llm = ChatGroq(temperature=0.7, model_name="llama-3.1-8b-instant", groq_api_key=os.getenv("GROQ_API_KEY"))
             response = llm.invoke([
                 SystemMessage(content="You are a helpful and friendly AI assistant."),
                 HumanMessage(content=request.question)
