@@ -173,7 +173,7 @@ async def upload_knowledge_base(session_id: str = Form(...), file: UploadFile = 
         else:
             session["vector_store"] = FAISS.from_texts(texts=chunks, embedding=embeddings)
 
-        llm = ChatGroq(temperature=0.2, model_name="llama3-8b-8192", groq_api_key=os.getenv("GROQ_API_KEY"))
+        llm = ChatGroq(temperature=0.2, model_name="llama-3.1-8b-instant", groq_api_key=os.getenv("GROQ_API_KEY"))
 
         prompt_template = """
             You are a knowledgeable and responsible medical AI assistant. 
