@@ -6,7 +6,7 @@ from typing import List, Tuple, Dict
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pantic import BaseModel
 
 # --- Document Parsers ---
 from pypdf import PdfReader
@@ -175,21 +175,20 @@ async def upload_knowledge_base(session_id: str = Form(...), file: UploadFile = 
 
         llm = ChatGroq(temperature=0.2, model_name="llama-3.1-8b-instant", groq_api_key=os.getenv("GROQ_API_KEY"))
 
+        # --- MODIFIED PROMPT TEMPLATE ---
         prompt_template = """
-            You are a knowledgeable and responsible medical AI assistant. 
-            Your goal is to provide accurate medical information, explain concepts clearly, and offer safe, evidence-based suggestions. 
-            Use the following pieces of context from the user's documents or input to answer the question. 
-            Structure your answer using Markdown with ## Headings and bullet points (*) for clarity. 
-            
-            - Focus on precision and medical relevance.
-            - Include possible next steps, precautions, or recommendations where appropriate.
-            - Clearly state if the answer is not available from the provided context or if further medical consultation is necessary.
-            - Avoid speculation and always prioritize safety and accuracy.
-            
+            You are a specialized medical AI assistant. Your primary function is to provide concise, accurate, and evidence-based medical information based on the context provided.
+
+            - Use the following context to answer the medical question.
+            - Structure your answer clearly, using Markdown for headings and bullet points where appropriate.
+            - If the answer is not in the context, state that clearly.
+            - Prioritize safety and accuracy above all. Do not speculate.
+            - Conclude every response with the mandatory disclaimer: "I am an AI assistant and not a substitute for professional medical advice. Please consult a healthcare professional for any health concerns."
+
             Context: {context}
-            
+
             Medical Question: {question}
-            
+
             Helpful Medical Answer (formatted in Markdown):
             """
                     
@@ -234,14 +233,22 @@ async def chat_with_bot(request: ChatRequest):
 
     # --- If not a meta-question, proceed to the LLM ---
     try:
-        # Handle general conversation if no documents are uploaded
+        # --- MODIFIED: Handle general conversation with a consistent medical persona ---
         if request.session_id not in sessions or not sessions[request.session_id].get("rag_chain"):
-            if re.search(r"^\s*(hi|hello|hey)\s*$", request.question, re.IGNORECASE):
-                return ChatResponse(answer="Hello! I'm ready to chat. For questions about specific documents, please upload a file first.")
-            
             llm = ChatGroq(temperature=0.7, model_name="llama-3.1-8b-instant", groq_api_key=os.getenv("GROQ_API_KEY"))
+            
+            # This system prompt ensures the AI always behaves as a medical assistant
+            medical_system_prompt = SystemMessage(
+                content="""
+                You are a specialized medical AI assistant. Your purpose is to provide concise and accurate medical information.
+                - When asked about your identity, state that you are a medical AI assistant.
+                - You must politely decline to answer questions that are not related to medicine, health, or biology.
+                - Always conclude every response with the mandatory disclaimer: 'I am an AI assistant and not a substitute for professional medical advice. Please consult a healthcare professional for any health concerns.'
+                """
+            )
+
             response = llm.invoke([
-                SystemMessage(content="You are a helpful and friendly AI assistant."),
+                medical_system_prompt,
                 HumanMessage(content=request.question)
             ])
             return ChatResponse(answer=response.content)
