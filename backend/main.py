@@ -6,7 +6,7 @@ from typing import List, Tuple, Dict
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from pantic import BaseModel
+from pydantic import BaseModel
 
 # --- Document Parsers ---
 from pypdf import PdfReader
