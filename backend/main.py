@@ -36,7 +36,7 @@ app = FastAPI(
 # List of allowed origins. Use a wildcard for local development for convenience.
 # For production, you should lock this down to your Vercel domain.
 allowed_origins = [
-    "https://document-chatbot-kambaa.vercel.app", # Your production frontend
+    "https://asha-med.vercel.app", # Your production frontend
     "http://127.0.0.1:5500",                   # Your local "Live Server"
     "http://localhost:5500",                    # Also good to have for local dev
 ]
