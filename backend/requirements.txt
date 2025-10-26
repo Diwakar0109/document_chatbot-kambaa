@@ -1,5 +1,5 @@
-# --- FINAL REQUIREMENTS FOR RENDER (v5) ---
-# Updating pandas to a version with a pre-compiled wheel for Python 3.13.
+# --- FINAL REQUIREMENTS (v6) ---
+# Explicitly adding a numpy version compatible with Python 3.13 to prevent slow builds.
 
 # Web Framework & Server
 fastapi==0.111.0
@@ -20,13 +20,14 @@ langchain-cohere==0.1.7
 # Vector Store
 faiss-cpu==1.9.0.post1
 
-# Document Parsers (with updated pandas)
-pypdf
-python-docx
-pandas
-openpyxl
+# Document Parsers
+pypdf==4.2.0
+python-docx==1.1.2
+pandas==2.3.3
+openpyxl==3.1.2
 
-# Fix for initial PyYAML build errors
+# Foundational Libraries (Pinning for Python 3.13)
+numpy==2.0.0
 PyYAML==6.0.1
 
 # Build tools
