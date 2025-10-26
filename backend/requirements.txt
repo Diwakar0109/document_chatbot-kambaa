@@ -1,32 +1,31 @@
+# --- RECOMMENDED REQUIREMENTS FILE ---
+# Pinning versions makes builds faster and more reliable.
+
 # Web Framework & Server
-fastapi
-uvicorn
-gunicorn
+fastapi==0.111.0
+uvicorn==0.29.0
+gunicorn==22.0.0
 
 # Environment & Utilities
-python-dotenv
-python-multipart
+python-dotenv==1.0.1
+python-multipart==0.0.9
 
 # LangChain Core & Integrations
-langchain
-langchain-community
-langchain-groq
-langchain-cohere
+# Pinning these is CRITICAL to avoid conflicts.
+langchain==0.2.1
+langchain-core==0.2.3
+langchain-community==0.2.1
+langchain-groq==0.1.5
+langchain-cohere==0.1.7
 
 # Vector Store
-faiss-cpu
+faiss-cpu==1.8.0
 
 # Document Parsers
-pypdf
-python-docx
-pandas
-openpyxl
+pypdf==4.2.0
+python-docx==1.1.2
+pandas==2.2.2
+openpyxl==3.1.2
 
-# --- FIX FOR BUILD ERROR ---
-# Explicitly add a compatible version of PyYAML to resolve the build failure on Render.
+# Fix for build errors with older versions
 PyYAML==6.0.1
-
-# These are build tools, often not needed here but harmless to keep
-setuptools
-wheel
-cython
