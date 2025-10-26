@@ -1,5 +1,5 @@
-# --- FINAL REQUIREMENTS (v6) ---
-# Explicitly adding a numpy version compatible with Python 3.13 to prevent slow builds.
+# --- FINAL REQUIREMENTS FOR RENDER WITH PYTHON 3.11 ---
+# This file is stable and avoids all previous build/conflict issues.
 
 # Web Framework & Server
 fastapi==0.111.0
@@ -17,17 +17,13 @@ langchain-community==0.2.1
 langchain-groq==0.1.5
 langchain-cohere==0.1.7
 
-# Vector Store
-faiss-cpu==1.9.0.post1
-
-# Document Parsers
+# Vector Store, Parsers, and Foundational Libraries
+faiss-cpu==1.8.0
 pypdf==4.2.0
 python-docx==1.1.2
-pandas==2.3.3
+pandas==2.2.2
 openpyxl==3.1.2
-
-# Foundational Libraries (Pinning for Python 3.13)
-numpy==2.0.0
+numpy==1.26.4
 PyYAML==6.0.1
 
 # Build tools
