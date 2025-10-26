@@ -21,3 +21,5 @@ pypdf                   # To parse .pdf files
 python-docx             # To parse .docx files
 pandas                  # To parse .xlsx and .xls files
 openpyxl                # Required by Pandas for reading modern Excel (.xlsx) files
+setuptools wheel
+cython
