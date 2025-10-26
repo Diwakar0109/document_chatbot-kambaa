@@ -1,5 +1,5 @@
-# --- FINAL REQUIREMENTS FOR RENDER (v4) ---
-# Using a faiss-cpu version confirmed to be available by the build log.
+# --- FINAL REQUIREMENTS FOR RENDER (v5) ---
+# Updating pandas to a version with a pre-compiled wheel for Python 3.13.
 
 # Web Framework & Server
 fastapi==0.111.0
@@ -17,13 +17,13 @@ langchain-community==0.2.1
 langchain-groq==0.1.5
 langchain-cohere==0.1.7
 
-# Vector Store (Version confirmed from the error log)
+# Vector Store
 faiss-cpu==1.9.0.post1
 
-# Document Parsers
+# Document Parsers (with updated pandas)
 pypdf==4.2.0
 python-docx==1.1.2
-pandas==2.2.2
+pandas==2.3.3
 openpyxl==3.1.2
 
 # Fix for initial PyYAML build errors
