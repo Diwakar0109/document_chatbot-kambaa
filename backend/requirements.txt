@@ -1,26 +1,32 @@
 # Web Framework & Server
-fastapi                 # The web framework itself
-uvicorn                 # ASGI server for local development
-gunicorn                # Production-grade server, essential for deployment
+fastapi
+uvicorn
+gunicorn
 
 # Environment & Utilities
-python-dotenv           # To load environment variables from .env file
-python-multipart        # Required by FastAPI for handling file uploads and form data
+python-dotenv
+python-multipart
 
 # LangChain Core & Integrations
-langchain               # Core LangChain library
-langchain-community     # For community components like the FAISS wrapper
-langchain-groq          # For Groq LLM integration
-langchain-cohere        # For Cohere embeddings integration
+langchain
+langchain-community
+langchain-groq
+langchain-cohere
 
 # Vector Store
-faiss-cpu               # The FAISS vector store library (CPU version)
+faiss-cpu
 
 # Document Parsers
-pypdf                   # To parse .pdf files
-python-docx             # To parse .docx files
-pandas                  # To parse .xlsx and .xls files
-openpyxl                # Required by Pandas for reading modern Excel (.xlsx) files
+pypdf
+python-docx
+pandas
+openpyxl
+
+# --- FIX FOR BUILD ERROR ---
+# Explicitly add a compatible version of PyYAML to resolve the build failure on Render.
+PyYAML==6.0.1
+
+# These are build tools, often not needed here but harmless to keep
 setuptools
 wheel
 cython
