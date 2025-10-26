@@ -19,7 +19,7 @@ langchain-groq==0.1.5
 langchain-cohere==0.1.7
 
 # Vector Store
-faiss-cpu==1.8.0
+faiss-cpu==1.9.0
 
 # Document Parsers
 pypdf==4.2.0
