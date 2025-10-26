@@ -1,5 +1,5 @@
-# --- RECOMMENDED REQUIREMENTS FILE ---
-# Pinning versions makes builds faster and more reliable.
+# --- FINAL REQUIREMENTS FOR RENDER (v4) ---
+# Using a faiss-cpu version confirmed to be available by the build log.
 
 # Web Framework & Server
 fastapi==0.111.0
@@ -11,15 +11,14 @@ python-dotenv==1.0.1
 python-multipart==0.0.9
 
 # LangChain Core & Integrations
-# Pinning these is CRITICAL to avoid conflicts.
 langchain==0.2.1
 langchain-core==0.2.3
 langchain-community==0.2.1
 langchain-groq==0.1.5
 langchain-cohere==0.1.7
 
-# Vector Store
-faiss-cpu
+# Vector Store (Version confirmed from the error log)
+faiss-cpu==1.9.0.post1
 
 # Document Parsers
 pypdf==4.2.0
@@ -27,5 +26,10 @@ python-docx==1.1.2
 pandas==2.2.2
 openpyxl==3.1.2
 
-# Fix for build errors with older versions
+# Fix for initial PyYAML build errors
 PyYAML==6.0.1
+
+# Build tools
+setuptools
+wheel
+cython
