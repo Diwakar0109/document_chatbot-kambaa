@@ -1,32 +1,12 @@
-# --- FINAL REQUIREMENTS FOR RENDER WITH PYTHON 3.11 ---
-# This file is stable and avoids all previous build/conflict issues.
-
-# Web Framework & Server
-fastapi==0.111.0
-uvicorn==0.29.0
-gunicorn==22.0.0
-
-# Environment & Utilities
-python-dotenv==1.0.1
-python-multipart==0.0.9
-
-# LangChain Core & Integrations
-langchain==0.2.1
-langchain-core==0.2.3
-langchain-community==0.2.1
-langchain-groq==0.1.5
-langchain-cohere==0.1.7
-
-# Vector Store, Parsers, and Foundational Libraries
-faiss-cpu
-pypdf==4.2.0
-python-docx==1.1.2
-pandas==2.2.2
-openpyxl==3.1.2
-numpy==1.26.4
-PyYAML==6.0.1
-
-# Build tools
-setuptools
-wheel
-cython
+faiss-cpu==1.12.0
+fastapi==0.120.0
+langchain-cohere==0.4.6
+langchain-community==0.3.31
+langchain-groq==0.3.8
+pandas==2.3.3
+pypdf==6.1.3
+pypdf2==3.0.1
+python-docx==1.2.0
+python-dotenv==1.2.1
+python-multipart==0.0.20
+uvicorn==0.38.0
