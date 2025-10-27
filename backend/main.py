@@ -19,7 +19,7 @@ from langchain_cohere import CohereEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
-from langchain.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate ### CORRECTION 1: Added PromptTemplate import ###
 from langchain_core.messages import SystemMessage, HumanMessage
 
 
@@ -29,24 +29,22 @@ load_dotenv()
 app = FastAPI(
     title="AI Chatbot Backend",
     description="Backend for a RAG chatbot with session management.",
-    version="1.8.2" # Version bump for CORS fix
+    version="1.9.0" # Version bump for logic correction
 )
 
 # --- CORRECTED CORS CONFIGURATION ---
-# List of allowed origins. Use a wildcard for local development for convenience.
-# For production, you should lock this down to your Vercel domain.
 allowed_origins = [
-    "https://asha-med.vercel.app", # Your production frontend
-    "http://127.0.0.1:5500",                   # Your local "Live Server"
-    "http://localhost:5500",                    # Also good to have for local dev
+    "https://asha-med.vercel.app",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"], # Allows all methods
-    allow_headers=["*"], # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -60,7 +58,6 @@ sessions: Dict[str, Dict] = {}
 async def startup_event():
     """
     Initializes the Cohere embeddings model on application startup.
-    If initialization fails, the application will raise an error and shut down.
     """
     print("--- Application Startup ---")
     global embeddings
@@ -72,8 +69,6 @@ async def startup_event():
             raise ValueError("FATAL: COHERE_API_KEY environment variable not set.")
         
         embeddings = CohereEmbeddings(cohere_api_key=cohere_api_key, model=COHERE_EMBED_MODEL)
-        
-        # Perform a small test embedding to ensure the key and model are valid
         _ = embeddings.embed_query("Test query")
 
         print(f"✅ Cohere embeddings model ('{COHERE_EMBED_MODEL}') initialized successfully.")
@@ -175,141 +170,45 @@ async def upload_knowledge_base(session_id: str = Form(...), file: UploadFile = 
 
         llm = ChatGroq(temperature=0.2, model_name="llama-3.1-8b-instant", groq_api_key=os.getenv("GROQ_API_KEY"))
 
-        # --- MODIFIED PROMPT TEMPLATE ---
+        ### CORRECTION 2: Added a prompt to condense the question using chat history ###
+        condense_question_prompt_template = """
+        Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+        Chat History:
+        {chat_history}
+        Follow Up Input: {question}
+        Standalone question:"""
+        CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(condense_question_prompt_template)
+
+        ### CORRECTION 3: Included {context} and {question} placeholders in the main prompt ###
         prompt_template = """
-YOU ARE "DR. CAREBOT" — AN EXPERT VIRTUAL HEALTH ASSISTANT TRAINED IN PRIMARY CARE AND TROPICAL DISEASE TRIAGE.  
-YOU COMMUNICATE LIKE A COMPASSIONATE HUMAN DOCTOR IN CHAT FORMAT, ASKING FOLLOW-UP QUESTIONS, ANALYZING SYMPTOMS, AND PROVIDING SAFE, ACCURATE, AND REASSURING ADVICE.  
-YOU DO NOT DIAGNOSE DEFINITIVELY, BUT YOU EDUCATE THE USER, SUGGEST POSSIBLE CAUSES, HOME CARE STEPS, AND WHEN TO SEEK MEDICAL HELP.  
-YOU MUST SOUND EMPATHETIC, CALM, AND REASSURING, WHILE REMAINING FACTUALLY CORRECT.  
+YOU ARE "DR. Asha" — AN EXPERT VIRTUAL HEALTH ASSISTANT. YOUR GOAL IS TO ANALYZE THE PROVIDED MEDICAL REPORT CONTEXT AND ANSWER THE USER'S QUESTION IN A COMPASSIONATE, CLEAR, AND RESPONSIBLE MANNER.
+
+Follow these instructions precisely:
+1.  **Analyze the Context**: Base your answer *only* on the information found in the 'Context from uploaded documents' section below. Do not use any outside knowledge.
+2.  **Address the User's Question**: Directly answer the user's specific 'Question'.
+3.  **Maintain Persona**: Speak like a calm, empathetic, and professional doctor. Acknowledge the user's concerns.
+4.  **Do Not Diagnose**: Never give a definitive diagnosis. Instead, explain what the results mean and suggest consulting a doctor for a formal diagnosis and treatment plan.
+5.  **Handle Missing Information**: If the context does not contain the answer to the question, you MUST state: "I'm sorry, but I cannot find that specific information in the report you've provided. It would be best to discuss this with your doctor."
 
 ---
-
-### OBJECTIVE ###
-CREATE A CONVERSATION WHERE:
-- THE BOT ASKS RELEVANT QUESTIONS STEP-BY-STEP TO UNDERSTAND THE USER’S SYMPTOMS.
-- THE BOT PROVIDES A SIMPLE ANALYSIS BASED ON THE SYMPTOMS.
-- THE BOT GIVES CLEAR HOME-CARE ADVICE AND WHEN TO SEE A DOCTOR.
-- THE BOT SPEAKS NATURALLY — LIKE A REAL CONVERSATION, NOT A REPORT.
-
+**Context from uploaded documents:**
+{context}
 ---
-
-### CHAIN OF THOUGHTS ###
-
-FOLLOW THESE STEPS BEFORE EVERY RESPONSE:
-
-1. **UNDERSTAND** — READ the user’s symptom description carefully; IDENTIFY key clues (onset, severity, associated symptoms, exposure).
-2. **BASICS** — RECOGNIZE common categories: infection (viral, bacterial, mosquito-borne), allergic, digestive, etc.
-3. **BREAK DOWN** — DIVIDE the situation into symptom groups (fever, pain, gastrointestinal, respiratory, skin).
-4. **ANALYZE** — THINK through likely causes, considering regional illnesses (like dengue, malaria, flu, etc.), WITHOUT claiming certainty.
-5. **BUILD** — FORMULATE an empathetic message that:
-   - acknowledges how the person feels
-   - restates what’s known
-   - lists possible reasons in plain English
-   - provides practical next steps
-6. **EDGE CASES** — CHECK for red flags (severe pain, confusion, bleeding, dehydration) and include **urgent warning signs**.
-7. **FINAL ANSWER** — RESPOND conversationally, using short sentences, simple language, and bullet points where helpful.
-
+**User's Question:**
+{question}
 ---
-
-### CONVERSATION STYLE RULES ###
-
-- SOUND HUMAN: Ask questions like “Did this start suddenly or gradually?” or “Any sore throat or cough?”
-- USE empathy: “That sounds uncomfortable — let’s figure out what’s going on.”
-- SUMMARIZE briefly: “From what you’ve told me, this could be a viral fever.”
-- PROVIDE SAFE ADVICE: hydration, rest, paracetamol, light meals.
-- INCLUDE clear red-flag warnings that require medical attention.
-- ALWAYS mention: “If this worsens or doesn’t improve in 24–48 hours, see a doctor.”
-
----
-
-### WHAT NOT TO DO ###
-
-- NEVER give a **definitive diagnosis** (“You have dengue”) — instead, say “This could be…”
-- NEVER prescribe antibiotics or restricted medicines.
-- NEVER sound robotic, formal, or overly technical.
-- NEVER ignore **safety escalation** (always mention when to see a doctor).
-- NEVER use **complex medical jargon** (keep it conversational).
-- NEVER skip **empathy** — every message should sound caring.
-- NEVER make **assumptions** about test results or prior conditions.
-
----
-
-### FEW-SHOT EXAMPLE ###
-
-**bot:** Hi, tell me what’s bothering you.
-
-**user:** I suddenly got a fever this evening. I’m feeling very cold, my whole body is aching, and I feel weak and heavy.
-
-**bot:** When exactly did this start — a few hours ago or yesterday?
-
-**user:** It started a few hours ago. I suddenly felt chills and my body started aching.
-
-**bot:** Did you check your temperature?
-
-**user:** Yes, it was around 101.5°F.
-
-**bot:** Any headache, sore throat, cough, or blocked nose?
-
-**user:** A little headache, but no sore throat or cough.
-
-**bot:** Any nausea, vomiting, or stomach upset?
-
-**user:** No, none of that.
-
-**bot:** Have you noticed any rashes on your skin or pain behind your eyes?
-
-**user:** No rash, but my joints feel heavy.
-
-**bot:** Have you been outside recently or noticed more mosquitoes around your home?
-
-**bot:** Based on what you told me —
-
-- Sudden high fever  
-- Chills and severe body pain  
-- Mosquito exposure  
-
-This looks most likely to be an early **viral infection**, but **dengue fever** is also a possibility, especially since dengue often starts with:
-- Sudden fever  
-- Body pain (“break-bone fever” feeling)  
-- Headache and weakness  
-
-However, if the fever comes and goes with strong chills (shivering before and sweating after), **malaria** could also be a reason.
-
-**Advice:**
-- Take **paracetamol 650 mg every 6 hours** if fever >100°F.  
-- Drink plenty of fluids — at least **2–3 liters/day** (ORS, soups, coconut water).  
-- Rest well — stay in bed; avoid phone or screen strain.  
-- Eat light food — fruits, rice, porridge. Avoid oily and spicy meals.  
-- **Avoid ibuprofen or aspirin** — they can worsen dengue-related bleeding.
-
-**Tests (if fever continues >1 day):**
-- CBC (Complete Blood Count)  
-- Dengue NS1 Antigen test  
-- Malaria Smear / Rapid Test  
-
-**Warning Signs (go to hospital immediately if):**
-- High fever (>102°F) not coming down  
-- Severe abdominal pain or vomiting  
-- Rashes or red spots on skin  
-- Drowsiness or confusion  
-- Bleeding gums or dark urine  
-
----
-
-### OPTIMIZATION STRATEGY ###
-
-- For **small models (≤3B)**: Simplify output, focus on 1–2 follow-up questions per turn.  
-- For **large models (≥7B)**: Include richer context, early differential reasoning (e.g., dengue vs. malaria vs. flu), and conversational empathy markers.  
-- In all cases, PRIORITIZE safety, empathy, and clarity.
-
+**Your Answer:**
 """                    
         PROMPT = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
 
+        ### CORRECTION 4: Updated chain creation to use the condense question prompt ###
         session["rag_chain"] = ConversationalRetrievalChain.from_llm(
             llm=llm,
             retriever=session["vector_store"].as_retriever(),
-            return_source_documents=False,
-            combine_docs_chain_kwargs={"prompt": PROMPT}
+            condense_question_prompt=CONDENSE_QUESTION_PROMPT,
+            combine_docs_chain_kwargs={"prompt": PROMPT},
+            return_source_documents=False
         )
 
         session["uploaded_files"].append(file.filename)
@@ -317,6 +216,8 @@ However, if the fever comes and goes with strong chills (shivering before and sw
         return {"status": "success", "message": f"Added '{file.filename}'. Knowledge base now contains: {file_list}"}
 
     except Exception as e:
+        import traceback
+        print(traceback.format_exc()) # Print full traceback to console for easier debugging
         raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
 
 
@@ -324,59 +225,46 @@ However, if the fever comes and goes with strong chills (shivering before and sw
 async def chat_with_bot(request: ChatRequest):
     if not request.session_id:
         raise HTTPException(status_code=400, detail="Session ID is missing.")
+    
+    session = sessions.get(request.session_id)
 
-    # --- Intercept meta-questions BEFORE sending to the LLM ---
-    doc_question_pattern = r"(what|which|list)\s+(file|doc|document|documet)s?\s+(have|did)\s+I\s+(upload|sent|send)|(list|show)\s+(me\s+)?my\s+(file|doc|document|documet)s?"
-    if re.search(doc_question_pattern, request.question, re.IGNORECASE):
-        if request.session_id in sessions and sessions[request.session_id].get("uploaded_files"):
-            file_list = "\n".join([f"* {f}" for f in sessions[request.session_id]["uploaded_files"]])
-            return ChatResponse(answer=f"## Uploaded Documents\nYou have uploaded the following documents in this session:\n{file_list}")
-        else:
-            return ChatResponse(answer="You have not uploaded any documents in this session yet.")
+    # --- If RAG chain doesn't exist (no file uploaded), use the general medical persona ---
+    if not session or not session.get("rag_chain"):
+        llm = ChatGroq(temperature=0.7, model_name="llama-3.1-8b-instant", groq_api_key=os.getenv("GROQ_API_KEY"))
+        
+        medical_system_prompt = SystemMessage(
+            content="""
+            You are a specialized medical AI assistant named Dr. Asha. Your purpose is to provide general medical information.
+            - When asked about your identity, state that you are a medical AI assistant.
+            - You must politely decline to answer questions that are not related to medicine, health, or biology.
+            - If you are asked a question before a document is uploaded, politely state: "I can help with that once you upload a medical report. Please use the upload button to provide a document."
+            - Always conclude every response with the mandatory disclaimer: 'I am an AI assistant and not a substitute for professional medical advice. Please consult a healthcare professional for any health concerns.'
+            """
+        )
 
-    history_question_pattern = r"(what was|what's|what is)\s+(my|the)\s+(last|previous)\s+question|my\s+previous\s+question"
-    if re.search(history_question_pattern, request.question, re.IGNORECASE):
-        if request.chat_history:
-            last_user_question = request.chat_history[-1][0]
-            return ChatResponse(answer=f"Your previous question was: \"{last_user_question}\"")
-        else:
-            return ChatResponse(answer="You haven't asked any questions before this one.")
-
-    # --- If not a meta-question, proceed to the LLM ---
-    try:
-        # --- MODIFIED: Handle general conversation with a consistent medical persona ---
-        if request.session_id not in sessions or not sessions[request.session_id].get("rag_chain"):
-            llm = ChatGroq(temperature=0.7, model_name="llama-3.1-8b-instant", groq_api_key=os.getenv("GROQ_API_KEY"))
-            
-            # This system prompt ensures the AI always behaves as a medical assistant
-            medical_system_prompt = SystemMessage(
-                content="""
-                You are a specialized medical AI assistant. Your purpose is to provide concise and accurate medical information.
-                - When asked about your identity, state that you are a medical AI assistant.
-                - You must politely decline to answer questions that are not related to medicine, health, or biology.
-                - Always conclude every response with the mandatory disclaimer: 'I am an AI assistant and not a substitute for professional medical advice. Please consult a healthcare professional for any health concerns.'
-                """
-            )
-
+        try:
             response = llm.invoke([
                 medical_system_prompt,
                 HumanMessage(content=request.question)
             ])
             return ChatResponse(answer=response.content)
+        except Exception as e:
+            print(f"Error during general chat for session {request.session_id}: {e}")
+            raise HTTPException(status_code=500, detail=f"An error occurred in general chat: {str(e)}")
 
-        # Use the RAG chain if documents have been uploaded
-        session = sessions[request.session_id]
+    # --- Use the RAG chain if documents have been uploaded ---
+    try:
         result = session["rag_chain"].invoke({
             "question": request.question,
             "chat_history": request.chat_history
         })
         return ChatResponse(answer=result["answer"])
     except Exception as e:
-        print(f"Error during chat for session {request.session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+        print(f"Error during RAG chat for session {request.session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"An error occurred during RAG chat: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
-    import os
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=port, reload=True)
+    # Use "main:app" if you run this file directly as `python main.py`
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
