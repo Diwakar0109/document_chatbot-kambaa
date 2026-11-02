@@ -1,86 +1,89 @@
-# Advanced RAG Chatbot with Document Analysis
+# Dr. Asha — Personalized Medical Report Chatbot
 
-### **Live Demo:** [View the Deployed Application Here](https://document-chatbot-kambaa.vercel.app/)
+An AI health companion that reads your medical reports and answers with **context about you** — not generic textbook text. Built with a modern FastAPI backend, a Groq-hosted `openai/gpt-oss-120b` model, local ONNX embeddings, and a polished streaming frontend.
 
-An intelligent, full-stack chatbot application that leverages Retrieval-Augmented Generation (RAG) to answer questions based on user-uploaded documents. Built with a Python/FastAPI backend and a polished vanilla JavaScript frontend, this project is optimized for performance, user experience, and is fully deployed online.
+## What makes this different from a plain RAG bot
 
-## Key Features
+**Every question passes through a two-stage pipeline:**
 
-*   **Multi-Format Document Upload:** Supports a wide range of document types (`.pdf`, `.docx`, `.txt`, and `.xlsx` Excel sheets) for building a dynamic knowledge base.
-*   **Advanced RAG Architecture:** Utilizes `LangChain`, `FAISS` vector stores, and `HuggingFace` sentence transformers to provide accurate, context-aware answers strictly from the provided documents.
-*   **Polished, Modern Frontend:**
-    *   **Light & Dark Mode:** A sleek theme toggle that persists the user's choice in `localStorage`.
-    *   **Responsive Design:** A clean, mobile-first interface that works beautifully on all screen sizes.
-    *   **Accessibility Focused:** Includes support for `prefers-reduced-motion`, high-contrast modes, and clear `focus-visible` states.
-    *   **Interactive UI:** Features smooth animations, drag-and-drop file uploads, and a "New Chat" functionality.
-*   **Persistent User Sessions:** Chat history and uploaded documents are preserved on page reload within a single browser tab using `sessionStorage`. New tabs correctly initiate new sessions.
-*   **Intelligent "Meta-Command" Handling:** The chatbot can answer questions about the application's state (e.g., "What documents have I uploaded?" or "What was my last question?") without confusing the RAG model.
-*   **Optimized for Performance:** The heavy embeddings model is pre-loaded on application startup, not on each request, significantly reducing latency during file uploads.
-*   **Cloud Deployed:** The entire application (backend API and frontend) is deployed on Render, demonstrating an understanding of modern CI/CD and cloud infrastructure practices.
+1. **Intake (one fast JSON call):** extracts durable personal facts into a session *profile* (age, sex, conditions, medications, allergies, pregnancy status, preferences…), then decides whether the question can be answered in a genuinely personalized way **right now**, or whether 1–3 quick clarifying questions would materially change the answer. Clarifications are rendered as **quick-reply chips** in the UI — never generic filler.
+2. **Answer (streamed):** retrieval over the session's uploaded reports (FAISS) + the profile + everything you clarified, answered in the warm **Dr. Asha** persona as a live token stream. Answers quote your actual values with units and reference ranges, explain terms in plain language, suggest questions for your doctor, and never hand out definitive diagnoses.
 
-## Tech Stack
+Other highlights:
 
-| Area      | Technology / Library                                                              | Purpose                                                              |
-| :-------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
-| **Backend** | **Python**, **FastAPI**, **Uvicorn**, **Gunicorn**                                | Building and serving the high-performance, asynchronous API.         |
-|           | **LangChain**, **Groq**, **FAISS**, **HuggingFace**                               | Orchestrating the RAG pipeline for document analysis and generation. |
-|           | **Pandas**, **PyPDF**, **python-docx**                                            | To parse and extract text from various document formats.             |
-| **Frontend**| **HTML5**, **CSS3**, **Vanilla JavaScript (ES6)**                                   | Building a modern, accessible, and responsive user interface.        |
-| **Deployment**| **Render**                                                                        | Cloud platform for deploying the backend and frontend.               |
-|           | **Git & GitHub**                                                                  | For version control and as the deployment source for Render.         |
+- **Session profile** — facts you mention in chat are captured automatically; you can view and edit everything in the **Profile drawer**.
+- **Instant report orientation** — after upload, Dr. Asha immediately tells you what kind of report it is and what stands out.
+- **SSE streaming** with stage indicators ("reviewing your question…", "reading your reports…").
+- **Privacy by default** — everything (reports, profiles, chats) lives in server memory only and is evicted after 3 hours of inactivity. Embeddings run **locally** (FastEmbed/ONNX), so report text is only ever sent to the Groq LLM endpoint.
+- **Hardened** — file-size (10 MB) and per-session file limits, duplicate detection, session TTL + cap, HTML-escaped markdown rendering (DOMPurify), restricted CORS.
+- **Light/dark theme**, reduced-motion and high-contrast support, keyboard-accessible throughout.
 
-## Architectural Highlights & Problem-Solving
+## Tech stack (Nov 2026)
 
-This project involved several key architectural decisions to ensure robustness, performance, and a superior user experience.
+| Layer | Choice | Why |
+| :--- | :--- | :--- |
+| LLM | `openai/gpt-oss-120b` via **Groq** | Best intake-JSON reliability + answer quality in our benchmark (see `tools/eval_groq_models.py`); switchable via `GROQ_MODEL` |
+| Embeddings | **FastEmbed** (`BAAI/bge-small-en-v1.5`, local ONNX) | No API key, no third-party data sharing, ~130 MB |
+| RAG | LangChain + **FAISS** in-memory, `RecursiveCharacterTextSplitter` (1200/200) | Per-session isolated indexes, MMR retrieval |
+| API | **FastAPI** + uvicorn, SSE `StreamingResponse`, lifespan-managed startup | Async, typed, modern |
+| Parsers | pypdf · python-docx · pandas (CSV/XLSX) | PDF, DOCX, TXT, CSV, Excel |
+| Frontend | Vanilla ES6 + CSS (custom properties), `marked` + **DOMPurify** | Zero build step, tiny bundle, safe markdown |
+| Deploy | **Render** blueprint (`render.yaml`: Python web service + static site) | One-click infra as code |
 
-### 1. Performance Optimization: Solving the Embeddings Latency
-**Problem:** The initial implementation loaded the `HuggingFaceEmbeddings` model on every file upload, causing a significant delay for the user.
-**Solution:** I moved the model initialization to the global scope of the FastAPI application. This ensures the model is loaded only **once** when the server starts, making all subsequent file processing requests extremely fast.
+## Run locally
 
-### 2. Accuracy: Intelligent "Meta-Command" Interception
-**Problem:** The RAG chain would fail when asked questions about the conversation itself (e.g., "What was my last question?"), as this information wasn't in the uploaded documents.
-**Solution:** I implemented a command interception layer in the `/chat` endpoint. Using regular expressions, the backend now identifies these "meta-questions" and answers them using simple application logic, ensuring fast, accurate responses and preventing unnecessary RAG pipeline executions.
-
-### 3. User-Centric Frontend with Modern Features
-**Problem:** A standard UI is functional but not engaging. The goal was to create a polished and accessible experience.
-**Solution:**
-*   **Theme Engine:** I built a light/dark mode system using CSS variables (`:root`) and a `[data-theme]` attribute on the `<html>` element. This allows for instant theme changes without a page reload.
-*   **State Persistence:** The user's theme preference is saved to `localStorage`, ensuring their choice is remembered on their next visit.
-*   **Accessibility:** To ensure the application is usable by everyone, I included CSS media queries to respect user preferences for `prefers-reduced-motion` and `prefers-contrast`, along with clear focus indicators.
-
-## Running the Project Locally
-
-Follow these steps to set up and run the project on your local machine.
-
-### Prerequisites
-- Python 3.9+
-- A [Groq API Key](https://console.groq.com/keys)
-
-### 1. Clone the Repository
 ```bash
-git clone https://github.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME].git
-cd [YOUR_REPO_NAME]
-```
-
-### 2. Backend Setup
-```bash
-# Navigate to the backend directory
 cd backend
-
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-
-# Install the required packages
+python -m venv .venv
+.venv\Scripts\activate            # Windows (Git Bash: source .venv/Scripts/activate)
 pip install -r requirements.txt
 
-# Create a .env file and add your Groq API key
-echo "GROQ_API_KEY=your_actual_api_key_here" > .env
-
-# Run the backend server
-uvicorn main:app --reload
+# Create .env (never commit it):
+#   GROQ_API_KEY=your_key
+#   GROQ_MODEL=openai/gpt-oss-120b
+python -m uvicorn main:app --port 8000
 ```
-The backend will be running at `http://127.0.0.1:8000`.
 
-### 3. Frontend Setup
-Navigate to the `frontend` directory and open the `index.html` file in your web browser. It will connect to the local backend automatically.
+Open **http://127.0.0.1:8000** — the backend serves the frontend itself. (When the frontend is hosted separately, it falls back to the deployed backend URL.)
+
+## Test reports
+
+`test_reports/` contains three synthetic, complex hospital documents (no real PHI) generated by `tools/generate_test_reports.py`:
+
+- `Metabolic_CBC_Lipid_Panel_Report.docx` — 45-year-old male with type 2 diabetes: CMP, CBC, lipid panel, urinalysis, medications, impression.
+- `Thyroid_VitaminD_Iron_Panel_Report.docx` — 32-year-old female with fatigue: thyroid function, vitamin D, iron studies, hormone panel.
+- `Lab_Trends_Workbook.xlsx` — multi-sheet longitudinal trends (HbA1c, lipids, BP log).
+
+Upload them through the UI and ask things like *"My doctor said my HbA1c is high — what does that mean for me?"* — the intake step will ask your age/sex/medications if it needs them, then tailor the answer.
+
+## Model benchmark
+
+`tools/eval_groq_models.py` scores candidate models on intake-JSON reliability, personalization quality, safety compliance, latency and throughput:
+
+```bash
+backend/.venv/Scripts/python tools/eval_groq_models.py
+```
+
+Results are printed as a table; the winner is set as the `GROQ_MODEL` default in `render.yaml` / `.env`.
+
+## Configuration
+
+| Env var | Default | Purpose |
+| :--- | :--- | :--- |
+| `GROQ_API_KEY` | — | **Required.** Groq API key |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Any Groq model id (`gpt-oss-20b` answers well but fails strict JSON mode ~40% of the time — see benchmark) |
+| `EMBEDDINGS_PROVIDER` | `fastembed` | `fastembed` (local) or `cohere` (`COHERE_API_KEY` required) |
+| `MAX_FILE_MB` / `MAX_FILES_PER_SESSION` | `10` / `8` | Upload guards |
+| `SESSION_TTL_MINUTES` / `MAX_SESSIONS` | `180` / `200` | Memory guards |
+| `MAX_CLARIFY_ROUNDS` | `2` | Max clarification rounds per topic (prevents question loops) |
+
+## API
+
+| Endpoint | Purpose |
+| :--- | :--- |
+| `POST /api/upload` | multipart `session_id` + `file` → status, patient-friendly summary, profile |
+| `POST /api/chat/stream` | SSE: `status` → `clarify` or `answer_start` + `token`s → `done` |
+| `POST /api/chat` | Same pipeline, non-streaming JSON |
+| `GET/POST /api/profile` | Read / merge the session profile |
+| `POST /api/session/clear` | Wipe a session immediately |
+| `GET /api/health` | Liveness + active model/embeddings |

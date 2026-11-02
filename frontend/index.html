@@ -3,710 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asha</title>
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        :root {
-            /* Light mode colors */
-            --bg-primary: #ffffff;
-            --bg-secondary: #f7f8fc;
-            --bg-tertiary: #eef1f6;
-            --text-primary: #1c1c1e;
-            --text-secondary: #6b7280;
-            --accent-primary: #007aff;
-            --accent-hover: #005ce6;
-            --accent-light: rgba(0, 122, 255, 0.1);
-            --border-color: #e5e7eb;
-            --shadow-light: rgba(0, 0, 0, 0.05);
-            --shadow-medium: rgba(0, 0, 0, 0.1);
-            --user-gradient: linear-gradient(135deg, #007aff, #005ce6);
-            --error-bg: #f8d7da;
-        }
-
-        [data-theme="dark"] {
-            /* Dark mode colors */
-            --bg-primary: #18191a;
-            --bg-secondary: #242526;
-            --bg-tertiary: #3a3b3c;
-            --text-primary: #e4e6eb;
-            --text-secondary: #b0b3b8;
-            --accent-primary: #0a84ff;
-            --accent-hover: #359aff;
-            --accent-light: rgba(10, 132, 255, 0.15);
-            --border-color: #3e4042;
-            --shadow-light: rgba(0, 0, 0, 0.2);
-            --shadow-medium: rgba(0, 0, 0, 0.3);
-            --user-gradient: linear-gradient(135deg, #0a84ff, #359aff);
-            --error-bg: #721c24;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-secondary);
-            margin: 0;
-            padding: 1rem;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: var(--text-primary);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 900px;
-            height: calc(100vh - 2rem);
-            min-height: 600px;
-            background: var(--bg-primary);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px var(--shadow-medium);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-            transition: background-color 0.3s ease;
-            border: 1px solid var(--border-color);
-        }
-
-        header {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            padding: 1.25rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .header-icon {
-            width: 32px;
-            height: 32px;
-            color: var(--accent-primary);
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
-        .theme-toggle {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .theme-toggle:hover {
-            background: var(--bg-tertiary);
-            transform: scale(1.05);
-            border-color: var(--accent-primary);
-        }
-
-        .theme-toggle svg {
-            width: 20px;
-            height: 20px;
-            stroke: var(--text-secondary);
-            transition: all 0.3s ease;
-        }
-
-        .theme-toggle:hover svg {
-            stroke: var(--accent-primary);
-        }
-        
-        #theme-toggle .icon-wrapper {
-            transition: transform 0.4s ease-in-out;
-        }
-
-        #new-chat-button {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            border-radius: 12px;
-            padding: 0.6rem 1rem;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-
-        #new-chat-button:hover {
-            background-color: #e0a800;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3);
-        }
-
-        .chat-window {
-            flex-grow: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            position: relative;
-            scroll-behavior: smooth;
-        }
-        
-        .drag-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--accent-light);
-            border: 2px dashed var(--accent-primary);
-            border-radius: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--accent-primary);
-            pointer-events: none;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .chat-window.drag-over .drag-overlay {
-            opacity: 1;
-        }
-        
-        .message-wrapper {
-            display: flex;
-            gap: 0.75rem;
-            max-width: 85%;
-            animation: slideIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.98);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: -5px;
-        }
-
-        .bot-message .avatar {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-        }
-
-        .user-message .avatar {
-            background: var(--user-gradient);
-        }
-        
-        .avatar svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        .bot-message .avatar svg { stroke: var(--text-primary); }
-        .user-message .avatar svg { stroke: white; }
-
-        .message {
-            padding: 0.875rem 1.25rem;
-            border-radius: 18px;
-            line-height: 1.6;
-            word-wrap: break-word;
-        }
-        
-        .user-message {
-            align-self: flex-end;
-            margin-left: auto;
-            flex-direction: row-reverse;
-        }
-        
-        .user-message .message {
-            background: var(--user-gradient);
-            color: white;
-            border-bottom-right-radius: 6px;
-            box-shadow: 0 4px 15px var(--shadow-light);
-        }
-        
-        .bot-message {
-            align-self: flex-start;
-        }
-        
-        .bot-message .message {
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-            border-bottom-left-radius: 6px;
-            border: 1px solid var(--border-color);
-        }
-
-        .bot-message p:first-child, .user-message p:first-child { margin-top: 0; }
-        .bot-message p:last-child, .user-message p:last-child { margin-bottom: 0; }
-        .bot-message h2 { margin-top: 0; }
-
-        /* Typing indicator animation */
-        .typing-indicator { display: flex; align-items: center; padding: 10px 0; }
-        .typing-indicator span {
-            height: 8px;
-            width: 8px;
-            background-color: var(--text-secondary);
-            border-radius: 50%;
-            display: inline-block;
-            margin: 0 2px;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }
-
-        .chat-input-area {
-            display: flex;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border-color);
-            background: var(--bg-primary);
-            align-items: center;
-            gap: 0.75rem;
-            transition: all 0.3s ease;
-        }
-        
-        .icon-button {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            cursor: pointer;
-            padding: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        .icon-button:hover:not(:disabled) {
-            background: var(--accent-light);
-            border-color: var(--accent-primary);
-            transform: translateY(-2px);
-        }
-
-        .icon-button svg {
-            width: 20px;
-            height: 20px;
-            stroke: var(--text-secondary);
-            transition: stroke 0.2s ease;
-        }
-
-        .icon-button:hover:not(:disabled) svg {
-            stroke: var(--accent-primary);
-        }
-        
-        #user-input {
-            flex-grow: 1;
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 0.875rem 1.125rem;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            transition: all 0.2s ease;
-            resize: none;
-            min-height: 48px;
-            max-height: 120px;
-        }
-
-        #user-input:focus {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 4px var(--accent-light);
-        }
-
-        #send-button {
-            background: var(--accent-primary);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-            width: 48px;
-            height: 48px;
-        }
-
-        #send-button svg {
-            width: 20px; height: 20px;
-            margin-left: 1px;
-        }
-
-        #send-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px var(--shadow-medium);
-            background: var(--accent-hover);
-        }
-
-        #attach-button:disabled, #send-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            body { padding: 0.5rem; }
-            .container { height: calc(100vh - 1rem); border-radius: 16px; }
-            header h1 { font-size: 1.25rem; }
-            .message-wrapper { max-width: 90%; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-    </style>
+    <meta name="description" content="Dr. Asha — a personalized AI health companion that reads your medical reports and answers with context about you.">
+    <title>Dr. Asha — Your Health Companion</title>
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <script>
+        // Apply saved theme before first paint to avoid a flash.
+        try { document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light'; } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="styles.css?v=20261101a">
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>
-                <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="8" height="8" rx="2"/><path d="M20 12v4h-4"/><path d="M16 12a4 4 0 1 1-8 0"/></svg>
-                Asha
-            </h1>
-            <div class="header-controls">
-                <button class="theme-toggle" id="theme-toggle" title="Toggle dark/light mode">
-                    <div class="icon-wrapper">
-                        <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                        </svg>
-                        <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                        </svg>
-                    </div>
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-avatar">
+                    <img src="assets/logo.svg" alt="" width="34" height="34">
+                </div>
+                <div class="brand-text">
+                    <h1>Dr. Asha</h1>
+                    <p class="brand-sub" id="presence-line">Your personal health companion</p>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <button class="ghost-button" id="profile-button" title="Your health profile" aria-haspopup="dialog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span class="hide-sm">Profile</span>
+                    <span class="profile-dot" id="profile-dot" hidden></span>
                 </button>
-                <button id="new-chat-button" title="Start a new chat">New Chat</button>
+                <button class="ghost-button" id="theme-toggle" title="Toggle dark/light mode" aria-label="Toggle dark or light mode">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                </button>
+                <button class="solid-button" id="new-chat-button">New chat</button>
             </div>
         </header>
-        <div class="chat-window" id="chat-window">
-             <div class="drag-overlay" id="drag-overlay">Drop file to upload</div>
-             <div class="message-wrapper bot-message" id="initial-message">
-                <div class="avatar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="8" height="8" rx="2"/><path d="M20 12v4h-4"/><path d="M16 12a4 4 0 1 1-8 0"/></svg>
+
+        <main class="chat-window" id="chat-window" aria-live="polite" aria-label="Chat conversation">
+            <div class="drag-overlay" id="drag-overlay" hidden>Drop your report to upload</div>
+
+            <div class="message-wrapper bot-message" id="welcome-card">
+                <div class="avatar bot" aria-hidden="true">
+                    <img src="assets/logo.svg" alt="">
                 </div>
-                <div class="message">
-                    <p>Hello! Upload your report to chat.</p>
+                <div class="bubble bot">
+                    <p>Hi, I'm <strong>Dr. Asha</strong> 👋</p>
+                    <p>Upload a medical report (PDF, DOCX, TXT, CSV or Excel) and I'll walk you through it — your numbers, what they mean <em>for you</em>, and what to ask your doctor. Or just ask me anything health-related to start.</p>
+                    <div class="starter-chips" id="starter-chips">
+                        <button class="chip" data-prompt="Explain my uploaded report in simple terms">Explain my report simply</button>
+                        <button class="chip" data-prompt="Which values in my report are out of range, and why do they matter?">Which values are out of range?</button>
+                        <button class="chip" data-prompt="What questions should I ask my doctor at my next visit?">What should I ask my doctor?</button>
+                        <button class="chip" data-prompt="What lifestyle changes would help someone like me?">Lifestyle changes for me</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="chat-input-area">
-            <input type="file" id="file-input" accept=".txt,.pdf,.docx,.xlsx,.xls" style="display: none;">
-            <button id="attach-button" class="icon-button" title="Upload Knowledge Base">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2.4-2.4-4.2-4.8-4.8-1.4-.3-2.7-.1-3.9.7-1.2-1.5-2.9-2.7-4.9-3.2-2.2-.5-4.3.3-5.9 2-1.8 1.9-2.4 4.5-1.5 6.9.7 1.9 2.1 3.6 4.1 4.5 1.4.6 2.8.9 4.2.8.7 0 1.3-.1 1.9-.3 1.2.9 2.6 1.5 4.1 1.5 2.5 0 4.8-1.4 5.9-3.5.5-1 .6-2.1.3-3.1Z"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>
+        </main>
+
+        <form class="composer" id="composer">
+            <input type="file" id="file-input" accept=".pdf,.docx,.txt,.csv,.xlsx,.xls" hidden>
+            <button type="button" class="icon-button" id="attach-button" title="Upload a report" aria-label="Upload a report">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2.4-2.4-4.2-4.8-4.8-1.4-.3-2.7-.1-3.9.7-1.2-1.5-2.9-2.7-4.9-3.2-2.2-.5-4.3.3-5.9 2-1.8 1.9-2.4 4.5-1.5 6.9.7 1.9 2.1 3.6 4.1 4.5 1.4.6 2.8.9 4.2.8.7 0 1.3-.1 1.9-.3 1.2.9 2.6 1.5 4.1 1.5 2.5 0 4.8-1.4 5.9-3.5.5-1 .6-2.1.3-3.1Z"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>
             </button>
-            <textarea id="user-input" placeholder="Ask me anything..." rows="1"></textarea>
-            <button id="send-button" title="Send Message">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <div class="input-wrap">
+                <textarea id="user-input" rows="1" placeholder="Ask Dr. Asha anything about your health…" maxlength="4000" aria-label="Your message"></textarea>
+            </div>
+            <button type="submit" class="icon-button send" id="send-button" title="Send message" aria-label="Send message" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
-        </div>
+        </form>
+
+        <p class="disclaimer">
+            Dr. Asha is an AI companion, <strong>not a medical device or a doctor</strong>. Reports are processed in memory
+            for this session only and are never stored. In an emergency, call your local emergency number.
+        </p>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            // --- THEME TOGGLE ---
-            const themeToggle = document.getElementById('theme-toggle');
-            const sunIcon = document.getElementById('sun-icon');
-            const moonIcon = document.getElementById('moon-icon');
-            const iconWrapper = themeToggle.querySelector('.icon-wrapper');
+    <!-- Profile drawer -->
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="profile-drawer" id="profile-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+        <div class="drawer-head">
+            <h2 id="drawer-title">Your health profile</h2>
+            <button class="ghost-button" id="drawer-close" aria-label="Close profile panel">✕</button>
+        </div>
+        <p class="drawer-note">Dr. Asha uses this to personalize every answer — the more she knows, the more relevant her guidance. Facts you mention in chat are added here automatically.</p>
+        <div class="drawer-body">
+            <label>Name <input id="pf-name" type="text" placeholder="What should I call you?"></label>
+            <div class="field-row">
+                <label>Age <input id="pf-age" type="number" min="0" max="120" placeholder="—"></label>
+                <label>Sex
+                    <select id="pf-sex">
+                        <option value="">—</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+            </div>
+            <label class="check-row"><input id="pf-pregnant" type="checkbox"> Currently pregnant</label>
+            <label>Diet
+                <select id="pf-diet">
+                    <option value="">—</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="eggetarian">Eggetarian</option>
+                    <option value="non-vegetarian">Non-vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                </select>
+            </label>
+            <label>Known conditions <textarea id="pf-conditions" rows="2" placeholder="e.g. Type 2 diabetes, hypothyroidism"></textarea></label>
+            <label>Medications <textarea id="pf-medications" rows="2" placeholder="e.g. Metformin 500mg, levothyroxine"></textarea></label>
+            <label>Allergies <input id="pf-allergies" type="text" placeholder="e.g. penicillin"></label>
+            <label>How I like answers
+                <select id="pf-preferences">
+                    <option value="">No preference</option>
+                    <option value="Keep it very simple">Keep it very simple</option>
+                    <option value="Give me full scientific detail">Full scientific detail</option>
+                </select>
+            </label>
+        </div>
+        <div class="drawer-foot">
+            <p class="drawer-files" id="drawer-files"></p>
+            <button class="solid-button" id="profile-save">Save profile</button>
+        </div>
+    </aside>
 
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            updateThemeIcons(savedTheme, true);
+    <div class="toast" id="toast" role="status" hidden></div>
 
-            function updateThemeIcons(theme, isInitial = false) {
-                if (!isInitial) {
-                   iconWrapper.style.transform = `rotate(${theme === 'dark' ? 90 : -90}deg)`;
-                }
-                setTimeout(() => {
-                    sunIcon.style.display = theme === 'dark' ? 'none' : 'block';
-                    moonIcon.style.display = theme === 'dark' ? 'block' : 'none';
-                    if (!isInitial) iconWrapper.style.transform = 'rotate(0deg)';
-                }, isInitial ? 0 : 150);
-            }
-
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcons(newTheme);
-            });
-
-            // --- SESSION & UI STATE ---
-            const getSessionId = () => {
-                let sessionId = sessionStorage.getItem('sessionId');
-                if (!sessionId) {
-                    sessionId = crypto.randomUUID();
-                    sessionStorage.setItem('sessionId', sessionId);
-                }
-                return sessionId;
-            };
-
-            const sessionId = getSessionId();
-            const chatWindow = document.getElementById("chat-window");
-            const userInput = document.getElementById("user-input");
-            const sendButton = document.getElementById("send-button");
-            const fileInput = document.getElementById("file-input");
-            const attachButton = document.getElementById("attach-button");
-            const newChatButton = document.getElementById("new-chat-button");
-            
-            const BACKEND_URL = "https://document-chatbot-kambaa.onrender.com";
-            let chatHistory = [];
-            let isUploading = false;
-            let isThinking = false;
-
-            // --- UI HELPERS ---
-            const resetChatUI = () => {
-                chatWindow.innerHTML = `
-                    <div class="drag-overlay" id="drag-overlay">Drop file to upload</div>
-                    <div class="message-wrapper bot-message" id="initial-message">
-                        <div class="avatar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="8" height="8" rx="2"/><path d="M20 12v4h-4"/><path d="M16 12a4 4 0 1 1-8 0"/></svg>
-                        </div>
-                        <div class="message">
-                            <p>Hello! Upload a file to begin a conversation.</p>
-                        </div>
-                    </div>`;
-            };
-
-            const setUiBusyState = (busy) => {
-                isThinking = busy;
-                userInput.disabled = busy || isUploading;
-                sendButton.disabled = busy || isUploading;
-            };
-
-            const setUiUploadingState = (uploading) => {
-                isUploading = uploading;
-                userInput.disabled = uploading || isThinking;
-                sendButton.disabled = uploading || isThinking;
-                attachButton.disabled = uploading || isThinking;
-            };
-
-            const autoResizeTextarea = () => {
-                userInput.style.height = 'auto';
-                userInput.style.height = (userInput.scrollHeight) + 'px';
-            };
-
-            // --- CORE LOGIC ---
-            async function handleNewChat() {
-                if (!confirm("Are you sure? This will clear the chat and remove uploaded documents.")) return;
-                try {
-                    const response = await fetch(`${BACKEND_URL}/session/clear`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ session_id: sessionId })
-                    });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.detail || "Failed to clear session.");
-                    }
-                    chatHistory = [];
-                    sessionStorage.removeItem('chatHistory');
-                    resetChatUI();
-                } catch (error) {
-                    console.error("Error starting new chat:", error);
-                    alert(`Could not start a new chat: ${error.message}`);
-                }
-            }
-            
-            function renderMarkdown(text) {
-                let html = text
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                    .replace(/^\s*\n\*/gm, '<ul>*')
-                    .replace(/^(\*.+)\s*\n([^\*])/gm, '$1</li></ul>\n$2')
-                    .replace(/^\*(.*)/gm, '<li>$1</li>');
-                return html.split('\n').filter(p => p.trim() !== '').map(p => `<p>${p}</p>`).join('');
-            }
-
-            const createAvatar = (sender) => {
-                const svg = sender === 'bot'
-                    ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="8" height="8" rx="2"/><path d="M20 12v4h-4"/><path d="M16 12a4 4 0 1 1-8 0"/></svg>`
-                    : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-                return `<div class="avatar">${svg}</div>`;
-            };
-
-            function addMessage(sender, content) {
-                document.getElementById('initial-message')?.remove();
-
-                const wrapper = document.createElement("div");
-                wrapper.classList.add("message-wrapper", `${sender}-message`);
-                
-                const messageEl = document.createElement("div");
-                messageEl.classList.add("message");
-                
-                if (sender === 'bot' && content === "Thinking...") {
-                    messageEl.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
-                } else if (sender === 'bot') {
-                    messageEl.innerHTML = renderMarkdown(content);
-                } else {
-                    messageEl.textContent = content;
-                }
-                
-                wrapper.innerHTML = createAvatar(sender);
-                wrapper.appendChild(messageEl);
-                chatWindow.appendChild(wrapper);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-                return wrapper;
-            }
-            
-            const saveChatHistory = () => sessionStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-
-            const loadChatHistory = () => {
-                const savedHistory = sessionStorage.getItem('chatHistory');
-                if (!savedHistory || JSON.parse(savedHistory).length === 0) return;
-                
-                chatHistory = JSON.parse(savedHistory);
-                document.getElementById('initial-message')?.remove();
-                chatHistory.forEach(([userMsg, botMsg]) => {
-                    if (userMsg) addMessage('user', userMsg);
-                    if (botMsg) addMessage('bot', botMsg);
-                });
-            };
-
-            async function handleFileUpload(file) {
-                if (isUploading || isThinking) return;
-                setUiUploadingState(true);
-                const userUploadMsg = `File uploaded: ${file.name}`;
-                addMessage('user', userUploadMsg);
-                const thinkingMsgWrapper = addMessage("bot", `Processing ${file.name}...`);
-                const thinkingMsgEl = thinkingMsgWrapper.querySelector('.message');
-                
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("session_id", sessionId);
-
-                try {
-                    const response = await fetch(`${BACKEND_URL}/upload`, { method: "POST", body: formData });
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.detail || "Upload failed.");
-                    
-                    thinkingMsgEl.innerHTML = renderMarkdown(result.message);
-                    chatHistory.push([userUploadMsg, result.message]);
-                    saveChatHistory();
-                } catch (error) {
-                    const errorMsg = `Error: ${error.message}`;
-                    thinkingMsgEl.innerHTML = renderMarkdown(errorMsg);
-                    thinkingMsgWrapper.style.backgroundColor = 'var(--error-bg)';
-                    chatHistory.push([userUploadMsg, errorMsg]);
-                    saveChatHistory();
-                } finally {
-                    setUiUploadingState(false);
-                    fileInput.value = "";
-                }
-            }
-
-            async function handleSendMessage() {
-                const messageText = userInput.value.trim();
-                if (!messageText || isUploading || isThinking) return;
-
-                setUiBusyState(true);
-                addMessage("user", messageText);
-                userInput.value = "";
-                autoResizeTextarea();
-                const thinkingMessageWrapper = addMessage("bot", "Thinking...");
-
-                try {
-                    const response = await fetch(`${BACKEND_URL}/chat`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ session_id: sessionId, question: messageText, chat_history: chatHistory.slice(-10) }),
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.detail || "Failed to get response.");
-                    
-                    thinkingMessageWrapper.querySelector('.message').innerHTML = renderMarkdown(data.answer);
-                    chatHistory.push([messageText, data.answer]);
-                    saveChatHistory();
-                } catch (error) {
-                    const errorMsg = `Error: ${error.message}`;
-                    thinkingMessageWrapper.querySelector('.message').innerHTML = renderMarkdown(errorMsg);
-                    thinkingMessageWrapper.style.backgroundColor = 'var(--error-bg)';
-                    chatHistory.push([messageText, errorMsg]);
-                    saveChatHistory();
-                } finally {
-                    setUiBusyState(false);
-                    userInput.focus();
-                }
-            }
-            
-            // --- EVENT LISTENERS ---
-            newChatButton.addEventListener("click", handleNewChat);
-            attachButton.addEventListener("click", () => fileInput.click());
-            fileInput.addEventListener("change", (e) => e.target.files[0] && handleFileUpload(e.target.files[0]));
-            
-            chatWindow.addEventListener("dragover", (e) => { e.preventDefault(); chatWindow.classList.add("drag-over"); });
-            chatWindow.addEventListener("dragleave", () => chatWindow.classList.remove("drag-over"));
-            chatWindow.addEventListener("drop", (e) => {
-                e.preventDefault();
-                chatWindow.classList.remove("drag-over");
-                e.dataTransfer.files[0] && handleFileUpload(e.dataTransfer.files[0]);
-            });
-
-            sendButton.addEventListener("click", handleSendMessage);
-            userInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                }
-            });
-            userInput.addEventListener('input', autoResizeTextarea);
-
-            // --- INITIAL LOAD ---
-            loadChatHistory();
-        });
-    </script>
+    <script src="app.js?v=20261101a"></script>
 </body>
 </html>
